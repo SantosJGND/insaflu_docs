@@ -36,7 +36,7 @@ How to Cite
 If you use INSaFLU in your work, please cite these publications:
 
 - Borges V, Pinheiro M et al. Genome Medicine (2018) 10:46 https://doi.org/10.1186/s13073-018-0555-0
-- Dourado Santos et al, pre-prrint (Research Square) https://doi.org/10.21203/rs.3.rs-3556988/v1
+- Dourado Santos et al. Genome Medicine (2024)  https://doi.org/10.1186/s13073-024-01334-3
 
 
 Contact

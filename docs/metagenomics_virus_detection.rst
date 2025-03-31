@@ -5,7 +5,15 @@
 
 The TELEVIR  bioinformatics component of INSaFLU is a modular pipeline for the identification of viral sequences in metagenomic data (both Illumina and ONT data). 
 
-It is composed of these main steps (detailed in https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#metagenomics-virus-detection):
+The TELEVIR module is intended for the detection of viral sequences in metagenomic data, and it is designed to be used in a clinical virology context. In this context, TELEVIR emphasises 
+the validation of results and the exclusion of False Positives, through the integration of diagnostic-origented metrics and visualizations.
+
+For identifying candidate metagenomic hits, TELEVIR makes available to the user a combination of classification algorithms and reference databases - together with pre-processing steps designed to 
+increase the sensitivy and specificity of the detection - and promotes the simultanous deployment of several approaches, to further potentiate detection through cross-validation.
+
+Alternatively, TELEVIR can be used to directly validate or disprove the presence of suspected viruses in a sample through mapping, and facilitates the comparison of test samples with negative/positive controls.
+
+The TELEVIR module is makes available the following main steps (detailed in https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#metagenomics-virus-detection):
 
 1. Read quality analysis and improvement [optional].
 2. Extra filtering [optional].
@@ -20,9 +28,162 @@ It is composed of these main steps (detailed in https://insaflu.readthedocs.io/e
 8. Remapping of the viral sequences against selected reference genomes. 
 9. Reporting.
 
-The following table provides an overview on all TELEVIR moules and outputs:
+The following table provides an overview on all TELEVIR modules and outputs:
 
 :download:`TELEVIR_current_modules_and_outputs_2023-10-20.xlsx <_static/TELEVIR_current_modules_and_outputs_2023-10-20.xlsx>`
+
+**TELEVIR Validation** - Evaluating a candidate viral Hit.
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Despite the use of multiple classification algorithms and reference databases, our analyses show that even in combination the user can expect a rate of false positives
+of 20 % (depending on sample and virus). This is why the TELEVIR module places special emphasis on the validation of results and the exclusion of False Positives. 
+
+Validation is done through mapping the original reads onto the genomes of candidate viruses. The first layer consists in analysing the metrics obtained. 
+The second layer consists in comparing results between samples and controls. 
+
+Below, you can find a description of the main outputs and statistics.
+
+**Mapping statistics**
+----------------------
+
+- **Cov (%)**: horizontal coverage (i.e., percentage of the reference sequence covered)
+- **Depth**: mean depth of coverage throughout the whole genome
+- **DepthC**: mean depth of coverage exclusively in the covered regions
+- **Mapped reads**: number of mapped reads
+- **start prop (%)**:   number of mapped mapped reads divided by the number of input reads (after QC)
+- **mapped_prop (%)**: number of mapped reads divided by the number of reads used for mapping (i.e., reads retained after the "Virus enrichment" and/or "host depletion steps)
+- **Gaps**: number of regions below the minimum coverage threshold (see note below)
+- **Windows Covered**: proportion of windows with mapped reads. Reference sequences are split into windows (x), with window size and number (x) being a function of sequence length, from a minimum of 3 up to a maximum of 10. Window number (x) is calculated as the equal division of sequence length by 2000 (without remainder), i.e., sequences <8KB and >20KB result in 3 and 10 windows, respectively.
+- **class. success**:  indication of whether the TAXID was selected for mapping after reads and/or contigs classification
+- **mapping success**: indication of whether reads/and contigs successfully mapped against the TAXID representative references sequence
+
+- **Warnings**: 
+	
+Flag-type "viruses" (oriented to shotgun metagenomics)  (default)
+
+- *"Likely False Positive"*: when most reads map to a very small region of the reference sequence, i.e., hits with high “DepthC" but low “Depth” and low "Cov (%)". Flagged for hits with DepthC / Depth > 10 and Cov (%) < 5%.
+- *"Vestigial Mapping"*: when only a vestigial amount of reads (<= 2) mapped.
+
+
+Flag-type **"probes"** (oriented to probe-based NGS target panels)
+
+- *"Likely False Positive"*: when the reference genome is not sufficiently covered as a function of the number of the proportion of Windows Covered, calculated as above. Flagged for hits with Windows Covered <= 50 % (calculated from the fraction presented)
+- *"Vestigial Mapping"*: when only a vestigial amount of reads (<= 2) mapped.
+
+
+.. note::
+  - **Cov** is considered only above a minimum **Depth** threshold. By default, this threshold is set to 1 for ONT data, and to 2 for Illumina data.
+  - For ONT, secondary mappings are suppressed during the re-mapping step. However, supplementary alignments (split or chimeric alignments) are not suppressed , since these can be informative. This behaviour can result in higher coverage than the number of reads mapped. 	
+
+
+
+**Mapping plots and output files**
+-----------------------------------
+
+By clicking in a TAXID description, user can visualize/download multiple outputs regarding:
+
+**READS MAPPING**
+
+- **Mapping Coverage** plot (depth of coverage throughout the reference genome)
+
+.. image:: _static/televir_project_mapping_plot.png
+
+- **Integrative Genomics Viewer (IGV)** visualization of the mapped reads
+
+.. image:: _static/31_TELEVIR_IGV.gif
+
+- **Mapped reads** in FASTA and BAM
+
+.. image:: _static/33_TELEVIR_download_mapped_reads.gif
+
+- **Reference sequence** (".fa" format) and ".fai" index
+
+
+**COMPARATIVE MAPPING**
+
+One important aspect of the TELEVIR module is the ability to compare the mapping of reads against different reference genomes. This is particularly useful when the user is trying to identify the most closely related reference genome to the virus present in the sample.
+
+As a matter of course, after each mapping, all reference genomes currently attributed to that sample are compared in terms of the mapping metrics, grouped and sorted. 
+
+This will result in a table where the reference genomes are grouped by the degree of overlap of cross-mapped reads. 
+This grouping intends to place together true positive hits with their corresponding cross-mapped potential false positives, allowing for the easy identification of the latter. 
+It can be also useful to join same-segment references (for segmented virus) and to help identifying reference sequences most closely related to the virus present in the sample. 
+The grouping parameter (`--r-overlap`) is modifiable in the "Global" section (software Final Report - Flagging and Sorting) of the TELEVIR Settings Menu for both technologies. 
+
+**“Sort sample report” should be deployed everytime the grouping parameter is changed for existing projects.**
+
+Grouped reference genomes:
+
+# IMAGE
+
+Grouping is based on the pairwise similarity in reads mapped against every genome. The respefctive proportinos of mapped reads can be viewd through the heatmap in the Read Overlap Summary. 
+
+# IMAGE
+
+**CONTIGS MAPPING**
+
+- **Assembly to reference dotplot** (location of the mapped contigs into the reference sequence)
+
+- **Mapped contigs** in FASTA
+
+- **Contigs alignment** in Pairwise mApping Format (PAF)
+
+- **Sample remap** page: statistics regarding the reads' mapping against the set of contigs classified for a given TAXID.
+
+.. image:: _static/televir_project_assembly_dotplot.png
+
+.. image:: _static/34_TELEVIR_mapped_contigs.gif
+
+
+**Guide for report interpretation**
+-----------------------------------
+
+**Interpretation of metagenomics virus detection data is not a trivial task (even for users with expertise in virology and/or bioinformatics)**. In order to facilitate output interpretation and decision-making on the part of users, TELEVIR runs culminate in user-oriented reports with a list of the top viral hits, each accompanied by several robust and diagnostic-oriented metrics (described above). Here, **we provide some guidance on how to interpret TELEVIR reports and exclude/confirm viral hits**, by exemplifying “expected” metric profiles (or combination of profiles) when there are differents levels of evidence for the virus presence:
+
+.. image:: _static/televir_guide_report_interpretation.png
+
+Further guidance:
+
+**# Why do you have**
+
+- **MULTIPLE HITS FOR THE SAME VIRUS (TAXID)?**. This is likely due to the presence of:
+
+	1. **segmented virus(es)** in the sample (each reference segment has different accession numbers, so they are listed in different rows).  In this case, if segmented and non-segmented viruses are expected to be present in the sample, it might worth checking the Raw Classification table and requesting extra mapping (as the top hits listed in the Main report might have not included the non-segmented virus due to the over listing of the segmented ones).
+	2. **several reference genomes (strains/variants) of the same virus** in the available Viral reference databases. In this case, **the virus present in the sample is likely more closely related to the reference genome (accession number) yielding the best mapping metrics**.
+
+- **MULTIPLE HITS FOR CLOSELY RELATED TAXID**? This is likely due to the cross-mapping of reads across several reference genomes with considerable nucleotide homology, such as viruses belonging to the same family. In this case, **the virus present in the sample is likely more closely related to the reference virus (TAXID) yielding the best mapping metrics**. INSaFLU team is working to facilitate grouping hits by virus genetic relatedness…
+
+
+# What should you do if **your expected virus is not listed in the Main report**?
+
+1. Check if the expected virus is listed in the **Raw Classification and Mapping Summary** panel. If it is listed and is flagged as "Unmapped", it means that the virus is likely present at a very low amount in the sample (and, as such, it was not automatically selected for confirmatory re-mapping step). **Click in the "eye" icon to request confirmatory mapping**. The results will show up soon in the Main table report. 
+
+2. **Re-run the sample by turning OFF** steps that might have filtered out your expected virus (namely Viral enrichment and/or Host depletion steps) or **by selecting new combinations of software** (e.g., for Reads classification).
+
+
+.. note::
+- Despite INSaFLU-TELEVIR platform is taking advantage of several viral reference databases, they do not cover all viruses. For instance, newly discovered or uncommon virus or viral strains (e.g., viruses without available complete genomes) might be missing, leading to false negative results.
+- The ultimate goal of the TELEVIR module is to detect viruses, and not necessarily to identify the virus “strain/variant/serotype”. Once a given virus is detected, users can perform fine-tune analyses (e.g, consensus sequences reconstruction, mutation detection, etc) with the classical INSaFLU projects. 
+
+
+# How can you **compare your test samples with the “negative/positive controls”**?
+
+The **inclusion of negative controls** (e.g. pathogen-negative samples, library preparation buffers, etc) during metagenomic sequencing in clinical virology **is highly recommended to identify sources of potential contamination and detect false positive hits**. Indeed, viral taxa/sequences detected in the test samples that are also present in the negative run controls should be interpreted as contamination (e.g., during wet-lab steps) or background noise (e.g., nucleic acids present in wet-lab reagents might yield false positive viral hits across test and control samples). In another perspective, the inclusion of **positive controls** (e.g., samples spiked with RNA or DNA viruses that do not infect humans) is also recoomended to control for the success of nucleic acids extraction, preparation and sequencing.
+
+In this context, INSaFLU-TELEVIR users are encouraged to **create different TELEVIR projects per different metagenomics sequencing run (including negative/positive controls)** for an enhanced sample comparison and output interpretation. 
+
+After selection of “control” sample(s) (which can be done before and after data analysis), **viral TAXID detected in the Main report of the user-selected “control” sample(s) will be flagged in the reports of the other samples as “Taxid found in control” in the “Control” column.** This new functionality is designed to facilitate the background subtraction of viral hits also found in controls. Multiple controls are possible.
+
+
+.. image:: _static/televir_control_report.png
+
+
+For further recommendations for interpretation of  metagenomics virus detection data, we recommend the following literature:
+
+- de Vries JJC, et al, 2021. Recommendations for the introduction of metagenomic next-generation sequencing in clinical virology, part II: bioinformatic analysis and reporting. J Clin Virol. https://doi.org/10.1016/j.jcv.2021.104812 
+
+- López-Labrador FX et al, 2020. Recommendations for the introduction of metagenomic high-throughput sequencing in clinical virology, part I: Wet lab procedure. J Clin Virol.  https://doi.org/10.1016/j.jcv.2020.104691
+
 
 Below, you can find instructions on how to create a TELEVIR project, run samples and visualize/intrepret the results.
 
@@ -90,8 +251,8 @@ In TELEVIR projects, **user can select “control” sample(s) at any time (befo
 .. image:: _static/televir_control_selection.png
 
 
-**TELEVIR - Output Visualization and Download**
-++++++++++++++++++++++++++++++++++++++++++++++++
+**TELEVIR Workflow - Output Visualization and Download**
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The INSaFLU-TELEVIR bioinformatics pipeline for metagenomics virus diagnostic generates multiple outputs, reflecting the multiple steps of the pipeline (detailed here: https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#metagenomics-virus-detection). The main report lists the top viral hits, each accompanied by several robust and **diagnostic-oriented metrics, statistics and visualizations**, provided as (interactive) tables (intermediate and final reports), graphs (e.g., coverage plots, Integrative Genomics Viewer visualization, Assembly to reference dotplot) and multiple downloadable output files (e.g., list of the software parameters, reads/contigs classification reports, mapped reads/contigs identified per each virus; reference sequences, etc)
 
@@ -116,135 +277,11 @@ This tab displays an interactive table with **summary statistics and visualizati
 .. note::
    - The **Sample** reports have the same layout as this Workflow main report, but compile all viral hits identified accross all workflows that were run a given sample, in which redundant hits are excluded. In summary, one mapping is selected by ACCID. For duplicate refs (the same ACCID) identified in different workflows, the one resulting in higher Cov (%) is presented
    - The **Project** reports are simple tables combining all top viral hits identified in the main reports of the several workflows that were run for all samples included in the project.
-- Both Sample and Project reports provide direct links to the detailed Workflow reports for an enhanced and advanced output interpretation 
+   - Both Sample and Project reports provide direct links to the detailed Workflow reports for an enhanced and advanced output interpretation 
 
 
 .. important::
 	- Viral hits (reference accession IDs) in the main reports (at both “Workflow” and “Sample” levels) can be grouped and sorted by the **degree of overlap of cross-mapped reads.** This grouping intends to place together true positive hits with their corresponding cross-mapped potential false positives, allowing for the easy identification of the latter. It can be also useful to join same-segment references (for segmented virus) and to help identifying reference sequences most closely related to the virus present in the sample. The grouping parameter (--r-overlap) is modifiable in a new “Reporting” section of the TELEVIR Settings Menu for both technologies. **“Sort sample report” should be deployed everytime the grouping parameter is changed for existing projects.**
-
-
-Below, you can find a description of the main outputs and statistics.
-
-**Mapping statistics**
-----------------------
-
-- **Cov (%)**: horizontal coverage (i.e., percentage of the reference sequence covered)
-- **Depth**: mean depth of coverage throughout the whole genome
-- **DepthC**: mean depth of coverage exclusively in the covered regions
-- **Mapped reads**: number of mapped reads
-- **start prop (%)**:   number of mapped mapped reads divided by the number of input reads (after QC)
-- **mapped_prop (%)**: number of mapped reads divided by the number of reads used for mapping (i.e., reads retained after the "Virus enrichment" and/or "host depletion steps)
-- **Gaps**: number of regions below the minimum coverage threshold (see note below)
-- **Windows Covered**: proportion of windows with mapped reads. Reference sequences are split into windows (x), with window size and number (x) being a function of sequence length, from a minimum of 3 up to a maximum of 10. Window number (x) is calculated as the equal division of sequence length by 2000 (without remainder), i.e., sequences <8KB and >20KB result in 3 and 10 windows, respectively.
-- **class. success**:  indication of whether the TAXID was selected for mapping after reads and/or contigs classification
-- **mapping success**: indication of whether reads/and contigs successfully mapped against the TAXID representative references sequence
-
-- **Warnings**: 
-	
-Flag-type "viruses" (oriented to shotgun metagenomics)  (default)
-
-- *"Likely False Positive"*: when most reads map to a very small region of the reference sequence, i.e., hits with high “DepthC" but low “Depth” and low "Cov (%)". Flagged for hits with DepthC / Depth > 10 and Cov (%) < 5%.
-- *"Vestigial Mapping"*: when only a vestigial amount of reads (<= 2) mapped.
-
-
-Flag-type **"probes"** (oriented to probe-based NGS target panels)
-
-- *"Likely False Positive"*: when the reference genome is not sufficiently covered as a function of the number of the proportion of Windows Covered, calculated as above. Flagged for hits with Windows Covered <= 50 % (calculated from the fraction presented)
-- *"Vestigial Mapping"*: when only a vestigial amount of reads (<= 2) mapped.
-
-
-.. note::
-  - **Cov** is considered only above a minimum **Depth** threshold. By default, this threshold is set to 1 for ONT data, and to 2 for Illumina data.
-  - For ONT, secondary mappings are suppressed during the re-mapping step. However, supplementary alignments (split or chimeric alignments) are not suppressed , since these can be informative. This behaviour can result in higher coverage than the number of reads mapped. 	
-
-
-
-**Mapping plots and output files**
------------------------------------
-
-By clicking in a TAXID description, user can visualize/download multiple outputs regarding:
-
-# READS MAPPING
-
-- **Mapping Coverage** plot (depth of coverage throughout the reference genome)
-
-.. image:: _static/televir_project_mapping_plot.png
-
-- **Integrative Genomics Viewer (IGV)** visualization of the mapped reads
-
-.. image:: _static/31_TELEVIR_IGV.gif
-
-- **Mapped reads** in FASTA and BAM
-
-.. image:: _static/33_TELEVIR_download_mapped_reads.gif
-
-- **Reference sequence** (".fa" format) and ".fai" index
-
-
-
-# CONTIGS MAPPING
-
-- **Assembly to reference dotplot** (location of the mapped contigs into the reference sequence)
-
-- **Mapped contigs** in FASTA
-
-- **Contigs alignment** in Pairwise mApping Format (PAF)
-
-- **Sample remap** page: statistics regarding the reads' mapping against the set of contigs classified for a given TAXID.
-
-.. image:: _static/televir_project_assembly_dotplot.png
-
-.. image:: _static/34_TELEVIR_mapped_contigs.gif
-
-
-**Guide for report interpretation**
------------------------------------
-
-**Interpretation of metagenomics virus detection data is not a trivial task (even for users with expertise in virology and/or bioinformatics)**. In order to facilitate output interpretation and decision-making on the part of users, TELEVIR runs culminate in user-oriented reports with a list of the top viral hits, each accompanied by several robust and diagnostic-oriented metrics (described above). Here, **we provide some guidance on how to interpret TELEVIR reports and exclude/confirm viral hits**, by exemplifying “expected” metric profiles (or combination of profiles) when there are differents levels of evidence for the virus presence:
-
-.. image:: _static/televir_guide_report_interpretation.png
-
-Further guidance:
-
-**# Why do you have**
-
-- **MULTIPLE HITS FOR THE SAME VIRUS (TAXID)?**. This is likely due to the presence of:
-
-	1. **segmented virus(es)** in the sample (each reference segment has different accession numbers, so they are listed in different rows).  In this case, if segmented and non-segmented viruses are expected to be present in the sample, it might worth checking the Raw Classification table and requesting extra mapping (as the top hits listed in the Main report might have not included the non-segmented virus due to the over listing of the segmented ones).
-	2. **several reference genomes (strains/variants) of the same virus** in the available Viral reference databases. In this case, **the virus present in the sample is likely more closely related to the reference genome (accession number) yielding the best mapping metrics**.
-
-- **MULTIPLE HITS FOR CLOSELY RELATED TAXID**? This is likely due to the cross-mapping of reads across several reference genomes with considerable nucleotide homology, such as viruses belonging to the same family. In this case, **the virus present in the sample is likely more closely related to the reference virus (TAXID) yielding the best mapping metrics**. INSaFLU team is working to facilitate grouping hits by virus genetic relatedness…
-
-
-# What should you do if **your expected virus is not listed in the Main report**?
-
-1. Check if the expected virus is listed in the **Raw Classification and Mapping Summary** panel. If it is listed and is flagged as "Unmapped", it means that the virus is likely present at a very low amount in the sample (and, as such, it was not automatically selected for confirmatory re-mapping step). **Click in the "eye" icon to request confirmatory mapping**. The results will show up soon in the Main table report. 
-
-2. **Re-run the sample by turning OFF** steps that might have filtered out your expected virus (namely Viral enrichment and/or Host depletion steps) or **by selecting new combinations of software** (e.g., for Reads classification).
-
-
-.. note::
-- Despite INSaFLU-TELEVIR platform is taking advantage of several viral reference databases, they do not cover all viruses. For instance, newly discovered or uncommon virus or viral strains (e.g., viruses without available complete genomes) might be missing, leading to false negative results.
-- The ultimate goal of the TELEVIR module is to detect viruses, and not necessarily to identify the virus “strain/variant/serotype”. Once a given virus is detected, users can perform fine-tune analyses (e.g, consensus sequences reconstruction, mutation detection, etc) with the classical INSaFLU projects. 
-
-
-# How can you **compare your test samples with the “negative/positive controls”**?
-
-The **inclusion of negative controls** (e.g. pathogen-negative samples, library preparation buffers, etc) during metagenomic sequencing in clinical virology **is highly recommended to identify sources of potential contamination and detect false positive hits**. Indeed, viral taxa/sequences detected in the test samples that are also present in the negative run controls should be interpreted as contamination (e.g., during wet-lab steps) or background noise (e.g., nucleic acids present in wet-lab reagents might yield false positive viral hits across test and control samples). In another perspective, the inclusion of **positive controls** (e.g., samples spiked with RNA or DNA viruses that do not infect humans) is also recoomended to control for the success of nucleic acids extraction, preparation and sequencing.
-
-In this context, INSaFLU-TELEVIR users are encouraged to **create different TELEVIR projects per different metagenomics sequencing run (including negative/positive controls)** for an enhanced sample comparison and output interpretation. 
-
-After selection of “control” sample(s) (which can be done before and after data analysis), **viral TAXID detected in the Main report of the user-selected “control” sample(s) will be flagged in the reports of the other samples as “Taxid found in control” in the “Control” column.** This new functionality is designed to facilitate the background subtraction of viral hits also found in controls. Multiple controls are possible.
-
-
-.. image:: _static/televir_control_report.png
-
-
-For further recommendations for interpretation of  metagenomics virus detection data, we recommend the following literature:
-
-- de Vries JJC, et al, 2021. Recommendations for the introduction of metagenomic next-generation sequencing in clinical virology, part II: bioinformatic analysis and reporting. J Clin Virol. https://doi.org/10.1016/j.jcv.2021.104812 
-
-- López-Labrador FX et al, 2020. Recommendations for the introduction of metagenomic high-throughput sequencing in clinical virology, part I: Wet lab procedure. J Clin Virol.  https://doi.org/10.1016/j.jcv.2020.104691
 
 
 Intermediate outputs 
@@ -285,6 +322,13 @@ Reads (and contigs) are mapped against  representative genome sequences of the t
 This tab provides an overview on the amount of viral hits (TAXIDs and representative accession numbers) yielding mapped reads/contigs. Only viral hits with mapped reads are shown in the Main Report - Pathogen Identification.  
 
 
+**Pathogen Identification**
+----------------------------
+
+This section displays the individual mapping statistics, visualizations and downloadable files for each viral hit (TAXID and representative accession numbers) detected during the intermediate step of **Reads and Contigs Classification** (see above) and selected for confirmatory re-mapping.
+
+This section facilitates the comparative analysis of mapping metrics and visualizations for each viral hit, facilitating the identification of potential cross-hit false positives.
+
 
 **Raw Classification and Mapping Summary**
 -----------------------------------------------------------------------
@@ -297,5 +341,77 @@ TAXIDs that were not automatically selected for confirmatory re-mapping step (fl
 .. image:: _static/35_TELEVIR_mapping_raw_report.gif
 
 
+**TELEVIR Investigatory Mapping**
+++++++++++++++++++++++++++++++++++
+
+The TELEVIR module allows users to perform an investigatory mapping of reads against one or multiple references, within a framework that facilitates the comparison of mapping metrics and visualizations for each reference. 
+
+A framework for investigatory mapping relies on the following services:
+- **Reference Selection**: users can select one or multiple references from the TELEVIR reference database, or upload their own references.
+- **Mapping Workflow**: a robust mapping workflow that includes the generation of mapping statistics, visualizations and downloadable files for each reference selected.
+- **Comparative Analysis**: The capacity to streamline mappings of multiple samples against multiple references, facilitating the identification of potential cross-hits, or contamination events.
 
 
+
+
+
+TELEVIR Reference Management
+----------------------------
+
+In the References section, the user can Upload References, search the TELEVIR reference data base, and create Reference Panels. The latter allows the user to streamline mappings by grouping references together.
+
+## IMAGE
+
+
+The Validation Workflow
+----------------------------
+
+The valitation workflow includes the following steps:
+
+1. **Extra Quality Control** (optional): Filtering reads based on complexity.
+
+2. **Viral Enrichment** (optional):  Retaining potential viral reads based on a rapid and permissive classification of the reads against a viral sequence database.
+
+3. **Host Depletion** (optional):  Removing potential host reads based on reference-based mapping against host genome sequence(s).
+
+4. **Request Mapping** : Reads are mapped against representative genome sequences of the top viral hits identified in the previous step.
+
+5. **Map filtering** (optional) : Filtering mapped reads based on length, identity and coverage.
+
+
+Steps 1-3  will use the same settings as defined for metagenomics workflows. steps 4-5 can be defined independently, in the Validation section of the TELEVIR Settings menu.
+
+The Sample References Dashboard
+---------------------------
+
+This panel allows users to quickly survey all reference genomes attributed to a sample, their mapping status, and to deploy mappings against selected references or groups of references (see "Reference Panels").
+
+Reference genomes are attributed to a sample in the following ways:
+
+- **Automatically**:  The result of metagenomics classification software deployed in the course of a TELEVIR workflow. Any reference Taxid clasification at the reads / contigs level will have a corresponding accession attributed to the sample.
+
+- **Manually**:  The user can select any reference genome from the TELEVIR reference database (original or uploaded). The user can also select a group of references (Reference Panel), to be mapped together. 
+
+Mapped or Automatically attributed references are shown in the Sample Reference Table, sorted by ensemble ranking - a combination of the ranks after combined sort (reads and contigs) across metagenomics workflows. 
+
+The Sample Reference Panel allows three types of actions: 
+- **Individual Mappings**: Select references to be mapped (these will be mapped alongside any manually added references).  
+- **Panel Mapping**: Map against panels of references.
+- **Combined Mapping**: Map the top references as sorted by the ensemble ranking. The number of references to be mapped is set in the TELEVIR Settings menu.
+
+## IMAGE
+
+TELEVIR Reference Focus
+-----------------------
+
+Reference Focus is a tool designed to facilitate the comparative analysis of mappings and mapping statistics of multiple samples against a single reference genome.
+
+**Use**:
+The user fist selects a reference genome from among references attributed to any sample in a project. This creates a Reference Focus project, displayed below the project samples table. 
+
+Samples are added using "Add Samples" button and selected using the Sample Select column of the samples table, either on creation or later. 
+
+Within the reference project, the user can then setup multiple workflows to be deployed against the selected reference genome. For each workflow, mapping statisics are made availble in table format
+for all samples in the project, and succesful mappings can be inspected as stacked IGV plots.
+
+Reference Focus can also be linked to INSaFLU projects. 
