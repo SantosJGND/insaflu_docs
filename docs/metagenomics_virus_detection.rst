@@ -353,15 +353,13 @@ A framework for investigatory mapping relies on the following services:
 
 
 
-
-
 TELEVIR Reference Management
 ----------------------------
 
 In the References section, the user can Upload References, search the TELEVIR reference data base, and create Reference Panels. The latter allows the user to streamline mappings by grouping references together.
 
 ## IMAGE
-
+.. image:: _static/televir_references.png
 
 The Validation Workflow
 ----------------------------
