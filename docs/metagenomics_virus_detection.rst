@@ -38,7 +38,7 @@ The following table provides an overview on all TELEVIR modules and outputs:
 Despite the use of multiple classification algorithms and reference databases, our analyses show that even in combination the user can expect a rate of false positives
 of 20 % (depending on sample and virus). This is why the TELEVIR module places special emphasis on the validation of results and the exclusion of False Positives. 
 
-Validation is done through mapping the original reads onto the genomes of candidate viruses. The first layer consists in analysing the metrics obtained. 
+Validation is done through mapping the original reads onto the genomes of candidate viruses. The first layer consists in analysing the metrics and visualizations obtained. 
 The second layer consists in comparing results between samples and controls. 
 
 Below, you can find a description of the main outputs and statistics.
@@ -97,28 +97,6 @@ By clicking in a TAXID description, user can visualize/download multiple outputs
 .. image:: _static/33_TELEVIR_download_mapped_reads.gif
 
 - **Reference sequence** (".fa" format) and ".fai" index
-
-
-**COMPARATIVE MAPPING**
-
-One important aspect of the TELEVIR module is the ability to compare the mapping of reads against different reference genomes. This is particularly useful when the user is trying to identify the most closely related reference genome to the virus present in the sample.
-
-As a matter of course, after each mapping, all reference genomes currently attributed to that sample are compared in terms of the mapping metrics, grouped and sorted. 
-
-This will result in a table where the reference genomes are grouped by the degree of overlap of cross-mapped reads. 
-This grouping intends to place together true positive hits with their corresponding cross-mapped potential false positives, allowing for the easy identification of the latter. 
-It can be also useful to join same-segment references (for segmented virus) and to help identifying reference sequences most closely related to the virus present in the sample. 
-The grouping parameter (`--r-overlap`) is modifiable in the "Global" section (software Final Report - Flagging and Sorting) of the TELEVIR Settings Menu for both technologies. 
-
-**“Sort sample report” should be deployed everytime the grouping parameter is changed for existing projects.**
-
-Grouped reference genomes:
-
-# IMAGE
-
-Grouping is based on the pairwise similarity in reads mapped against every genome. The respefctive proportinos of mapped reads can be viewd through the heatmap in the Read Overlap Summary. 
-
-# IMAGE
 
 **CONTIGS MAPPING**
 
@@ -186,6 +164,28 @@ For further recommendations for interpretation of  metagenomics virus detection 
 
 
 Below, you can find instructions on how to create a TELEVIR project, run samples and visualize/intrepret the results.
+
+
+**COMPARATIVE MAPPING**
+-----------------------
+
+One important aspect of the TELEVIR module is the ability to compare the mapping of reads against different reference genomes. This is particularly useful when the user is trying to identify the most closely related reference genome to the virus present in the sample.
+
+As a matter of course, after each mapping, all reference genomes currently attributed to that sample are compared in terms of the mapping metrics, grouped and sorted. 
+
+This will result in a table where the reference genomes are grouped by the degree of overlap of cross-mapped reads. 
+This grouping intends to place together true positive hits with their corresponding cross-mapped potential false positives, allowing for the easy identification of the latter. 
+It can be also useful to join same-segment references (for segmented virus) and to help identifying reference sequences most closely related to the virus present in the sample. 
+The grouping parameter (`--r-overlap`) is modifiable in the "Global" section (software Final Report - Flagging and Sorting) of the TELEVIR Settings Menu for both technologies. 
+
+**“Sort sample report” should be deployed everytime the grouping parameter is changed for existing projects.**
+
+Grouped reference genomes:
+
+Grouping is based on the pairwise similarity in reads mapped against every genome. The respective proportinos of mapped reads can be viewd through the heatmap in the Read Overlap Summary. 
+
+.. image:: _static/45_TELEVIR_sort_heatmap.gif
+
 
 **TELEVIR Projects** - How to create and run a metagenomics virus detection project
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -261,6 +261,7 @@ TELEVIR reports are generated per **Workflow**, per **Sample** (combining non-re
 **Workflow Reports** are organized in dynamic 'expand-and-collapse' panels:
 
 .. image:: _static/29_TELEVIR_panels_results_overview.gif
+
 
 Pathogen identification (**Main report**)
 ...........................................
@@ -352,14 +353,13 @@ A framework for investigatory mapping relies on the following services:
 - **Comparative Analysis**: The capacity to streamline mappings of multiple samples against multiple references, facilitating the identification of potential cross-hits, or contamination events.
 
 
-
 TELEVIR Reference Management
 ----------------------------
 
 In the References section, the user can Upload References, search the TELEVIR reference data base, and create Reference Panels. The latter allows the user to streamline mappings by grouping references together.
 
-## IMAGE
 .. image:: _static/televir_references.png
+
 
 The Validation Workflow
 ----------------------------
@@ -380,7 +380,7 @@ The valitation workflow includes the following steps:
 Steps 1-3  will use the same settings as defined for metagenomics workflows. steps 4-5 can be defined independently, in the Validation section of the TELEVIR Settings menu.
 
 The Sample References Dashboard
----------------------------
+-------------------------------
 
 This panel allows users to quickly survey all reference genomes attributed to a sample, their mapping status, and to deploy mappings against selected references or groups of references (see "Reference Panels").
 
@@ -397,7 +397,7 @@ The Sample Reference Panel allows three types of actions:
 - **Panel Mapping**: Map against panels of references.
 - **Combined Mapping**: Map the top references as sorted by the ensemble ranking. The number of references to be mapped is set in the TELEVIR Settings menu.
 
-## IMAGE
+.. image:: _static/44_ReferencesDashboard_TELEVIR.gif
 
 TELEVIR Reference Focus
 -----------------------
